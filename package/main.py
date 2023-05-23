@@ -54,9 +54,14 @@ def split_audio(input_file, duration, output_format, title="output", dir_name="o
 # Transcribe audio to text
 def transcribe_audio(audio_path):
     audio_file = open(audio_path, "rb")
-    # Note: Whisper API is currently not supported in the Python OpenAI library
-    transcript = openai.Audio.transcribe("whisper-1", audio_file)
-    return transcript.text
+    try:
+        # Note: Whisper API is currently not supported in the Python OpenAI library
+        transcript = openai.Audio.transcribe("whisper-1", audio_file)
+        return transcript.text
+    except openai.error.APIError as e:
+        print(f"An API error occurred: {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
 
 # 文字数制限を設けて、リスト形式に分割する関数
 def split_text(text, limit=2000):
@@ -80,14 +85,19 @@ def count_text(text_list):
 def summarize_text(text, prompt, model):
     # Generate summary using ChatGPT
     prompt = f"{prompt}\n\n{text}"
-    response = openai.ChatCompletion.create(
-        model=model,
-        messages=[
-            {"role": "user", "content": prompt}
-        ]
-    )
-    result = response["choices"][0]["message"]["content"]
-    return result
+    try:
+        response = openai.ChatCompletion.create(
+            model=model,
+            messages=[
+                {"role": "user", "content": prompt}
+            ]
+        )
+        result = response["choices"][0]["message"]["content"]
+        return result
+    except openai.error.APIError as e:
+        print(f"An API error occurred: {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
 
 
 def recursive_summary(text, prompt, model, token_limit=2500, depth=0):
