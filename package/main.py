@@ -134,7 +134,7 @@ def summarize_video(video_url, api_key, model):
             print(f"文字起こし {index}:\n{result}")
             transcript_text_sum += result
 
-    summary = recursive_summary(transcript_text_sum, "Please summarize the following text with paragraph breaks and line breaks in Japanese:", model)
+    summary = recursive_summary(transcript_text_sum, "Please summarize the following sentences in Japanese, separating them into paragraphs and line breaks:", model)
 
     # Generate summary using ChatGPT
     response = summarize_text(
