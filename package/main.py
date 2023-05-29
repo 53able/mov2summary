@@ -5,10 +5,22 @@ from pytube import YouTube
 import os
 from concurrent.futures import ThreadPoolExecutor
 import hashlib
-
+import re
 
 MODEL = "gpt-3.5-turbo"
 OUTPUT_PATH = "output"
+
+
+def validate_youtube_url(url):
+    youtube_regex = (
+        r'(https?://)?(www\.)?'
+        '(youtube|youtu|youtube-nocookie)\.(com|be)/'
+        '(watch\?v=|embed/|v/|.+\?v=)?([^&=%\?]{11})'
+    )
+
+    youtube_pattern = re.compile(youtube_regex)
+
+    return bool(youtube_pattern.match(url))
 
 
 def download_youtube_video(url, output_path):
@@ -124,6 +136,10 @@ def recursive_summary(text, prompt, model, token_limit=2500, depth=0):
 
 def summarize_video(video_url, api_key, model):
     openai.api_key = api_key
+
+    if not validate_youtube_url(video_url):
+        raise ValueError(f"'{video_url}' is not a valid YouTube URL.")
+
 
     # Download video from YouTube
     video_title = download_youtube_video(video_url, OUTPUT_PATH)
