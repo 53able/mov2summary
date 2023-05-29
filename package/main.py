@@ -1,18 +1,23 @@
+# -*- coding: utf-8 -*-
+
 import argparse
+import hashlib
+import os
+import re
+import shutil
+import tkinter as tk
+from concurrent.futures import ThreadPoolExecutor
+from tkinter import filedialog
+import glob
+
 import ffmpeg
 import openai
 from pytube import YouTube
-import os
-from concurrent.futures import ThreadPoolExecutor
-import hashlib
-import re
-import tkinter as tk
-from tkinter import filedialog
-import shutil
-import glob
+
 
 MODEL = "gpt-3.5-turbo"
 TMP_PATH = "tmp"
+
 
 # TMP_PATH ディレクトリを作成しておく
 # すでに存在していた場合は削除してから作成する
@@ -87,14 +92,6 @@ def split_text(text, limit=2000):
     return text_list
 
 
-# リスト全体の文字数をカウントする関数
-def count_text(text_list):
-    count = 0
-    for text in text_list:
-        count += len(text)
-    return count
-
-
 # 要約をリクエストする関数
 def summarize_text(text, prompt, model):
     # Generate summary using ChatGPT
@@ -114,24 +111,36 @@ def summarize_text(text, prompt, model):
         print(f"An unexpected error occurred: {e}")
 
 
-def recursive_summary(text, prompt, model, token_limit=2000, depth=0):
-    # 文字列を指定したトークン数で分割
-    text_list = split_text(text, token_limit)
+# 与えられた text_list 内の複数のテキストを並列に要約するための関数
+def parallel_summarize_text(text_list, prompt, model):
+    summary_text = ""
+    with ThreadPoolExecutor() as executor:
+        results = executor.map(summarize_text, text_list, [prompt] * len(text_list), [model] * len(text_list))
+        for result in results:
+            summary_text += result
+    return summary_text
 
-    # 各部分に対して要約を生成
-    summary_list = [summarize_text(part, prompt, model) for part in text_list]
 
-    # 要約を結合
-    summary = "".join(summary_list)
+# 与えられた text を指定したトークン数で分割し、並列に要約するための関数
+def parallel_iterative_summary(text, prompt, model, token_limit=2000):
+    depth = 0  # 要約の深さを追跡
+    summary = ""
 
-    print(f"要約 {depth}:\n{summary}")
+    while True:
+        # 文字列を指定したトークン数で分割
+        text_list = split_text(text, token_limit)
 
-    # 要約のトークン数を計算
-    summary_tokens = count_text(summary)
+        summary = parallel_summarize_text(text_list, prompt, model)
 
-    # トークン数が上限を超えていたら、再度要約を生成
-    if summary_tokens > token_limit:
-        return recursive_summary(summary, prompt, model, token_limit, depth + 1)
+        print(f"\n\n【要約 {depth}】:\n{summary}")
+
+        # トークン数が上限を超えていない場合は終了
+        if len(summary) <= token_limit:
+            break
+
+        # 文字列を更新
+        text = summary
+        depth += 1
 
     return summary
 
@@ -169,7 +178,7 @@ def process_video(video_path, api_key, model):
             transcript_text_sum += result
 
     # Summarize the transcript text
-    summary = recursive_summary(transcript_text_sum, "Please summarize the following sentences in Japanese, separating them into paragraphs and line breaks:", model)
+    summary = parallel_iterative_summary(transcript_text_sum, "Please summarize the following sentences in Japanese, separating them into paragraphs and line breaks. Adjust the text to be natural. Please sort out redundant wording.:\n\n", model)
 
     # Generate a title for the summary using ChatGPT
     response = summarize_text(
@@ -209,4 +218,4 @@ if __name__ == "__main__":
     else:
         summary = summarize_video_from_youtube(args.video_url, args.api_key, MODEL)
 
-    print(f"要約タイトル:\n{summary}")
+    print(f"\n\n【要約タイトル】:\n{summary}")
