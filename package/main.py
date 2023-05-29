@@ -114,7 +114,7 @@ def summarize_text(text, prompt, model):
         print(f"An unexpected error occurred: {e}")
 
 
-def recursive_summary(text, prompt, model, token_limit=2500, depth=0):
+def recursive_summary(text, prompt, model, token_limit=2000, depth=0):
     # 文字列を指定したトークン数で分割
     text_list = split_text(text, token_limit)
 
