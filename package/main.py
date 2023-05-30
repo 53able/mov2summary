@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+import glob
 import hashlib
 import os
 import re
@@ -8,25 +9,24 @@ import shutil
 import tkinter as tk
 from concurrent.futures import ThreadPoolExecutor
 from tkinter import filedialog
-import glob
 
 import ffmpeg
 import openai
 from pytube import YouTube
 
-
 MODEL = "gpt-3.5-turbo"
 TMP_PATH = "tmp"
 
 
-# TMP_PATH ディレクトリを作成しておく
-# すでに存在していた場合は削除してから作成する
+# 一時的なディレクトリを作成
+# 既に存在する場合は削除してから新しく作成
 def make_tmp_dir():
     if os.path.exists(TMP_PATH):
         shutil.rmtree(TMP_PATH)
     os.mkdir(TMP_PATH)
 
 
+# 入力されたURLが有効なYouTubeのURLかどうかを確認
 def validate_youtube_url(url):
     youtube_regex = (
         r'(https?://)?(www\.)?'
@@ -39,10 +39,11 @@ def validate_youtube_url(url):
     return bool(youtube_pattern.match(url))
 
 
+# 指定されたURLのYouTubeのビデオをダウンロード
+# ビデオのタイトルをSHA256でハッシュ化してファイル名に使用
 def download_youtube_video(url, output_path):
     yt = YouTube(url)
 
-    # ファイル名をハッシュ値化
     hash_object = hashlib.sha256(yt.title.encode())
     hashed_title = hash_object.hexdigest()
 
@@ -51,12 +52,12 @@ def download_youtube_video(url, output_path):
     return hashed_title
 
 
+# 入力ファイルの音声を分割
+# 分割後のファイルはTMP_PATHに保存
 def split_audio(input_file, duration, output_format, title="output"):
 
-    # clear the output directory
     shutil.rmtree(f"{TMP_PATH}/{title}.split.*.mp3", ignore_errors=True)
 
-    # FFmpeg command for splitting audio
     (
         ffmpeg
         .input(input_file)
@@ -64,17 +65,15 @@ def split_audio(input_file, duration, output_format, title="output"):
         .run()
     )
 
-    # Get the list of output file names
     output_files = sorted(glob.glob(os.path.join(TMP_PATH, f"{title}.split.*{output_format}")))
 
     return output_files
 
 
-# Transcribe audio to text
+# 音声ファイルをテキストに変換（トランスクリプト化）
 def transcribe_audio(audio_path):
     audio_file = open(audio_path, "rb")
     try:
-        # Note: Whisper API is currently not supported in the Python OpenAI library
         transcript = openai.Audio.transcribe("whisper-1", audio_file)
         return transcript.text
     except openai.error.APIError as e:
@@ -82,7 +81,9 @@ def transcribe_audio(audio_path):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
-# 文字数制限を設けて、リスト形式に分割する関数
+
+# テキストを指定された文字数で分割
+# 戻り地はテキストのリスト
 def split_text(text, limit=2000):
     text_list = []
     while len(text) > limit:
@@ -92,13 +93,12 @@ def split_text(text, limit=2000):
     return text_list
 
 
-# 要約をリクエストする関数
-def summarize_text(text, prompt, model):
-    # Generate summary using ChatGPT
+# 指定されたテキストを要約
+def summarize_text(text, prompt):
     prompt = f"{prompt}\n\n{text}"
     try:
         response = openai.ChatCompletion.create(
-            model=model,
+            model=MODEL,
             messages=[
                 {"role": "user", "content": prompt}
             ]
@@ -111,65 +111,60 @@ def summarize_text(text, prompt, model):
         print(f"An unexpected error occurred: {e}")
 
 
-# 与えられた text_list 内の複数のテキストを並列に要約するための関数
-def parallel_summarize_text(text_list, prompt, model):
+# テキストリストの各要素を並行して要約
+def parallel_summarize_text(text_list, prompt):
     summary_text = ""
     with ThreadPoolExecutor() as executor:
-        results = executor.map(summarize_text, text_list, [prompt] * len(text_list), [model] * len(text_list))
+        results = executor.map(summarize_text, text_list, [prompt] * len(text_list), [MODEL] * len(text_list))
         for result in results:
             summary_text += result
     return summary_text
 
 
-# 与えられた text を指定したトークン数で分割し、並列に要約するための関数
-def parallel_iterative_summary(text, prompt, model, token_limit=2000):
-    depth = 0  # 要約の深さを追跡
+# テキストを反復的に要約
+# 各イテレーションでテキストを分割し、並行して要約を実行
+def parallel_iterative_summary(text, prompt, token_limit=2000):
+    depth = 0
     summary = ""
 
     while True:
-        # 文字列を指定したトークン数で分割
         text_list = split_text(text, token_limit)
 
-        summary = parallel_summarize_text(text_list, prompt, model)
+        summary = parallel_summarize_text(text_list, prompt)
 
         print(f"\n\n【要約 {depth}】:\n{summary}")
 
-        # トークン数が上限を超えていない場合は終了
         if len(summary) <= token_limit:
             break
 
-        # 文字列を更新
         text = summary
         depth += 1
 
     return summary
 
 
+# ローカルのビデオファイルを選択
 def get_local_video_file():
     root = tk.Tk()
-    root.withdraw()  # Hide the main window.
-    video_path = filedialog.askopenfilename()  # Open the file dialog and get the selected file path.
+    root.withdraw()
+    video_path = filedialog.askopenfilename()
     return video_path
 
 
-def process_video(video_path, api_key, model):
-    # Set API key
-    openai.api_key = api_key
+# ビデオファイルを処理し、その要約を作成
+# ビデオから音声を抽出し、音声をテキストに変換（トランスクリプト化）し、テキストを要約
+def process_video(video_path):
 
-    # Get video title by hashing the video_path
     hash_object = hashlib.sha256(video_path.encode())
     video_title = hash_object.hexdigest()
 
-    # Extract audio from video
     stream = ffmpeg.input(video_path)
     audio_path = os.path.join(TMP_PATH, video_title + ".mp3")
     stream = ffmpeg.output(stream, audio_path)
     ffmpeg.run(stream)
 
-    # Split the audio into segments
     splits = split_audio(audio_path, 1200, ".mp3", video_title)
 
-    # Transcribe audio to text
     transcript_text_sum = ""
     with ThreadPoolExecutor() as executor:
         results = executor.map(transcribe_audio, splits)
@@ -177,29 +172,27 @@ def process_video(video_path, api_key, model):
             print(f"Transcript {index}:\n{result}")
             transcript_text_sum += result
 
-    # Summarize the transcript text
-    summary = parallel_iterative_summary(transcript_text_sum, "Please summarize the following sentences in Japanese, separating them into paragraphs and line breaks. Adjust the text to be natural. Please sort out redundant wording.:\n\n", model)
+    summary = parallel_iterative_summary(transcript_text_sum, "Please summarize the following sentences in Japanese, separating them into paragraphs and line breaks. Adjust the text to be natural. Please sort out redundant wording.:\n\n")
 
-    # Generate a title for the summary using ChatGPT
     response = summarize_text(
-        summary, "Please create a heading for the following text in Japanese:", model)
+        summary, "Please create a heading for the following text in Japanese:")
     return response
 
-def summarize_video_from_youtube(video_url, api_key, model):
+
+# YouTubeのビデオURLからビデオをダウンロードし、その要約を作成
+def summarize_video_from_youtube(video_url):
     if not validate_youtube_url(video_url):
         raise ValueError(f"'{video_url}' is not a valid YouTube URL.")
 
-    # Download video from YouTube
     video_title = download_youtube_video(video_url, TMP_PATH)
     video_path = os.path.join(TMP_PATH, f"{video_title}.mp4")
 
-    return process_video(video_path, api_key, model)
+    return process_video(video_path)
 
 
-def summarize_video(video_path, api_key, model):
-    return process_video(video_path, api_key, model)
-
-
+# ローカルのビデオファイルの要約を作成
+def summarize_video(video_path):
+    return process_video(video_path)
 
 
 if __name__ == "__main__":
@@ -208,14 +201,17 @@ if __name__ == "__main__":
     parser.add_argument('video_url', type=str, nargs='?', default=None, help='Path to the video file')
     args = parser.parse_args()
 
+    # api_keyを設定
+    openai.api_key = args.api_key
+
     make_tmp_dir()
 
     if args.video_url is None:
         video_path = get_local_video_file()
         if video_path is None:
             raise ValueError("No video file was selected.")
-        summary = summarize_video(video_path, args.api_key, MODEL)
+        summary = summarize_video(video_path)
     else:
-        summary = summarize_video_from_youtube(args.video_url, args.api_key, MODEL)
+        summary = summarize_video_from_youtube(args.video_url)
 
     print(f"\n\n【要約タイトル】:\n{summary}")
