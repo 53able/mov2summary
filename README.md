@@ -1,48 +1,64 @@
-# mov2summary
+# プロジェクトタイトル
 
-この Python プログラムは、与えられた動画の要約を作成するCLIツールです。
-動画の音声トラックをトランスクリプトに変換し、それを OpenAI の GPT-3.5 モデルを使用して要約します。
-ローカルの動画ファイルと YouTube の動画 URL の両方を対象にすることができます。
+## mov2summary
 
-## 必要なライブラリ
+このプロジェクトは、指定されたビデオ（特にYouTubeのビデオ）の要約を生成する CLI です。オープン AI のモデル `gpt-3.5-turbo` を使用して、ビデオの音声トランスクリプトを生成し、その後要約を作成します。
 
-- argparse
-- hashlib
-- os
-- re
-- shutil
-- tkinter
-- concurrent.futures
+## 機能
+
+- YouTube のビデオのダウンロード
+- ローカルのビデオファイルの読み込み
+- ビデオからの音声の抽出
+- 音声のトランスクリプト化
+- トランスクリプトの要約
+
+## 必要なPythonライブラリ
+
+このプロジェクトを実行するためには、以下の外部 Python ライブラリが必要です。
 - pytube
 - ffmpeg-python
 - openai
 
-上記のライブラリが必要です。`pip install` コマンドを使ってインストールできます。
-ffmeg を別途インストールする必要があります。
+これらのライブラリは `pip` を使用してインストールすることができます。以下にインストールコマンドを示します。
+
+```bash
+pip install -r requirements.txt
+```
 
 ## 使い方
 
-1. コマンドライン引数として OpenAI の API キーを指定します。
-2. YouTube の動画の URL 、 未指定の場合はローカルの動画ファイルを選択できます。
-
-### 例:
-
-YouTube 動画の要約:
+まず、以下のようにしてスクリプトを実行します。
 
 ```bash
-python ./package/main.py YOUR_OPENAI_API_KEY https://www.youtube.com/watch?v=abc123xyz
+python main.py YOUR_OPENAI_API_KEY YOUTUBE_VIDEO_URL
 ```
 
-ローカルの動画の要約:
+ここで、`YOUR_OPENAI_API_KEY`はあなたの OpenAI API キー、`YOUTUBE_VIDEO_URL`は要約したい YouTube のビデオの URL です。
+
+オプションで、`--clean` フラグを指定することで、一時ファイルを削除することができます。一時ファイルは、ダウンロードしたビデオファイルや音声ファイルなどです。 `tmp` ディレクトリに保存されます。
 
 ```bash
-python ./package/main.py YOUR_OPENAI_API_KEY
+python main.py YOUR_OPENAI_API_KEY YOUTUBE_VIDEO_URL --clean
 ```
 
-ローカルの動画ファイルを要約する場合、ファイルを選択するダイアログが表示されます。
+YOUTUBE_VIDEO_URL を指定せずにスクリプトを実行すると、 GUI が起動します。GUI では、ローカルのビデオファイルを読み込むことができます。
 
-## 注意点
+```bash
+python main.py YOUR_OPENAI_API_KEY
+```
 
+## 出力
+
+ビデオの要約は Markdown 形式で出力され、ユーザーが選択した場所に保存されます。要約は次のようなセクションに分割されます。
+1. タイトル: 要約全体のタイトル
+2. 要約：トランスクリプトを要約したもの。このセクションはさらに複数の段階（depth）に分割され、それぞれに要約が含まれます。
+3. トランスクリプト：ビデオの音声をテキストに変換したもの。
+
+## 注意事項
 - OpenAI の API キーは、個々のユーザーにとって機密情報であり、安全に管理してください。
 - YouTube の動画のダウンロードと変換には時間がかかる場合があります。
 - 音声トランスクリプトの要約には、OpenAI の API を使用しています。そのため、動画の長さによっては、要約の生成に時間がかかる場合があります。
+- 一部のビデオでは、音声のトランスクリプト化や要約がうまく行かない可能性があります。そのような場合、トランスクリプトや要約は生成されません。
+- このスクリプトは、動画の要約を生成するために OpenAI の API を使用します。このため、適切な API キーを提供する必要があります。また、OpenAI の API は使用料金が発生しますので、その点をご了承ください。詳しくは、[OpenAI のサイト](https://openai.com/)をご覧ください。
+- 動作確認してあるのは、Mac OS 13.3.1 です。他の環境では動作しない可能性があります。
+- Python のバージョンは 3.11.3 です。
