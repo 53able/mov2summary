@@ -14,6 +14,9 @@ import ffmpeg
 import openai
 from pytube import YouTube
 
+# spinner.py から Spinner クラスをインポート
+from spinner import Spinner
+
 MODEL = "gpt-3.5-turbo"
 TMP_PATH = "tmp"
 
@@ -178,6 +181,7 @@ def process_video(video_path):
 
     response = summarize_text(
         summary, "Please create a heading for the following text in Japanese:")
+
     return response
 
 
@@ -204,6 +208,9 @@ if __name__ == "__main__":
     parser.add_argument('--clean', action='store_true', help='Clean up temporary files')
     args = parser.parse_args()
 
+    spinner = Spinner('Processing video...')
+    spinner.start()
+
     # 一時ファイルを削除
     if args.clean:
         shutil.rmtree(TMP_PATH)
@@ -226,3 +233,5 @@ if __name__ == "__main__":
     generated_text.append(f"# {summary_title}")
 
     save_text_list(generated_text)
+
+    spinner.stop()
