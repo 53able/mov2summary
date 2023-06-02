@@ -115,7 +115,7 @@ def summarize_text(text, prompt):
 def parallel_summarize_text(text_list, prompt):
     summary_text = ""
     with ThreadPoolExecutor() as executor:
-        results = executor.map(summarize_text, text_list, [prompt] * len(text_list), [MODEL] * len(text_list))
+        results = executor.map(summarize_text, text_list, [prompt] * len(text_list))
         for result in results:
             summary_text += result
     return summary_text
