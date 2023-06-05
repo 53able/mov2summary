@@ -24,13 +24,6 @@ TMP_PATH = "tmp"
 TIMESTAMP = str(int(time.time()))
 
 
-# 一時ファイルを作成
-def make_tmp_dir():
-    if os.path.exists(TMP_PATH):
-        shutil.rmtree(TMP_PATH)
-    os.mkdir(TMP_PATH)
-
-
 # 入力されたURLが有効なYouTubeのURLかどうかを確認
 def validate_youtube_url(url):
     youtube_regex = (
@@ -217,7 +210,7 @@ if __name__ == "__main__":
 
     # 一時ファイルディレクトリがなかったら作成
     if not os.path.exists(TMP_PATH):
-        make_tmp_dir()
+        os.mkdir(TMP_PATH)
 
     # api_keyを設定
     openai.api_key = args.api_key
