@@ -215,6 +215,10 @@ if __name__ == "__main__":
     if args.clean:
         shutil.rmtree(TMP_PATH)
 
+    # 一時ファイルディレクトリがなかったら作成
+    if not os.path.exists(TMP_PATH):
+        make_tmp_dir()
+
     # api_keyを設定
     openai.api_key = args.api_key
 
