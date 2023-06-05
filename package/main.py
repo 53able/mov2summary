@@ -18,7 +18,7 @@ from pytube import YouTube
 from spinner import Spinner
 
 MODEL = "gpt-3.5-turbo"
-TMP_PATH = "tmp"
+TMP_PATH = f"{os.getcwd()}/tmp"
 
 # 一時ファイル命名用のユニックスタイムスタンプ
 TIMESTAMP = str(int(time.time()))
