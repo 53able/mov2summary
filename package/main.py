@@ -19,6 +19,7 @@ from spinner import Spinner
 
 MODEL = "gpt-3.5-turbo"
 TMP_PATH = f"{os.getcwd()}/tmp"
+TOKEN_LIMIT = 2000
 
 # 一時ファイル命名用のユニックスタイムスタンプ
 TIMESTAMP = str(int(time.time()))
@@ -75,11 +76,11 @@ def transcribe_audio(audio_path):
 
 
 # 指定された文字数でテキストを分割
-def split_text(text, limit=2000):
+def split_text(text):
     text_list = []
-    while len(text) > limit:
-        text_list.append(text[:limit])
-        text = text[limit:]
+    while len(text) > TOKEN_LIMIT:
+        text_list.append(text[:TOKEN_LIMIT])
+        text = text[TOKEN_LIMIT:]
     text_list.append(text)
     return text_list
 
@@ -114,15 +115,15 @@ def parallel_summarize_text(text_list, prompt):
 generated_text = []
 
 # テキストを指定された文字数で分割しながら要約
-def parallel_iterative_summary(text, prompt, token_limit=2000):
+def parallel_iterative_summary(text, prompt):
     depth = 0
     summary = ""
 
     while True:
-        text_list = split_text(text, token_limit)
+        text_list = split_text(text)
         summary = parallel_summarize_text(text_list, prompt)
         generated_text.append(f"## 要約 {depth}\n{summary}")
-        if len(summary) <= token_limit:
+        if len(summary) <= TOKEN_LIMIT:
             break
         text = summary
         depth += 1
