@@ -17,7 +17,7 @@ from pytube import YouTube
 # spinner.py から Spinner クラスをインポート
 from spinner import Spinner
 
-MODEL = "gpt-3.5-turbo-16k"
+MODEL = "gpt-3.5-turbo"
 TMP_PATH = f"{os.getcwd()}/tmp"
 TOKEN_LIMIT = 8000
 
