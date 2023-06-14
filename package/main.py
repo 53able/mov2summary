@@ -21,6 +21,12 @@ MODEL = "gpt-3.5-turbo-16k"
 TMP_PATH = f"{os.getcwd()}/tmp"
 TOKEN_LIMIT = 8000
 
+# 要約のプロンプト
+PROMPT_SUMMARY = "Please summarize the following sentences in Japanese, separating them into paragraphs and line breaks. Adjust the text to be natural. Please sort out redundant wording."
+
+# タイトルのプロンプト
+PROMPT_TITLE = "Please create a heading for the following text in Japanese."
+
 # 一時ファイル命名用のユニックスタイムスタンプ
 TIMESTAMP = str(int(time.time()))
 
@@ -86,8 +92,8 @@ def split_text(text):
 
 
 # 指定されたテキストを要約
-def summarize_text(text, prompt):
-    prompt = f"{prompt}\n\n{text}"
+def summarize_text(text):
+    prompt = f"{PROMPT_SUMMARY}:\n\n{text}"
     try:
         response = openai.ChatCompletion.create(
             model=MODEL,
@@ -102,12 +108,28 @@ def summarize_text(text, prompt):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
+# 指定されたテキストをタイトルに変換
+def title_text(text):
+    prompt = f"{PROMPT_TITLE}:\n\n{text}"
+    try:
+        response = openai.ChatCompletion.create(
+            model=MODEL,
+            messages=[
+                {"role": "user", "content": prompt}
+            ]
+        )
+        result = response["choices"][0]["message"]["content"]
+        return result
+    except openai.error.APIError as e:
+        print(f"An API error occurred: {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
 
 # テキストリストの各要素を並行して要約
-def parallel_summarize_text(text_list, prompt):
+def parallel_summarize_text(text_list):
     summary_text = ""
     with ThreadPoolExecutor() as executor:
-        results = executor.map(summarize_text, text_list, [prompt] * len(text_list))
+        results = executor.map(summarize_text, text_list)
         for result in results:
             summary_text += result
     return summary_text
@@ -115,13 +137,13 @@ def parallel_summarize_text(text_list, prompt):
 generated_text = []
 
 # テキストを指定された文字数で分割しながら要約
-def parallel_iterative_summary(text, prompt):
+def parallel_iterative_summary(text):
     depth = 0
     summary = ""
 
     while True:
         text_list = split_text(text)
-        summary = parallel_summarize_text(text_list, prompt)
+        summary = parallel_summarize_text(text_list)
         generated_text.append(f"## 要約 {depth}\n{summary}")
         if len(summary) <= TOKEN_LIMIT:
             break
@@ -171,12 +193,11 @@ def process_video(video_path):
             generated_text.append(f"## トランスクリプト {index}\n{result}")
             transcript_text_sum += result
 
-    summary = parallel_iterative_summary(transcript_text_sum, "Please summarize the following sentences in Japanese, separating them into paragraphs and line breaks. Adjust the text to be natural. Please sort out redundant wording.:\n\n")
+    summary = parallel_iterative_summary(transcript_text_sum)
 
-    response = summarize_text(
-        summary, "Please create a heading for the following text in Japanese:")
+    title = title_text(summary)
 
-    return response
+    return title
 
 
 # YouTubeのビデオURLからビデオをダウンロードし、その要約を作成
@@ -188,12 +209,6 @@ def summarize_video_from_youtube(video_url):
     video_path = os.path.join(TMP_PATH, f"{TIMESTAMP}.mp4")
 
     return process_video(video_path)
-
-
-# ローカルのビデオファイルの要約を作成
-def summarize_video(video_path):
-    return process_video(video_path)
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Summarize a video.')
@@ -220,7 +235,7 @@ if __name__ == "__main__":
         video_path = get_local_video_file()
         if video_path is None:
             raise ValueError("No video file was selected.")
-        summary_title = summarize_video(video_path)
+        summary_title = process_video(video_path)
     else:
         summary_title = summarize_video_from_youtube(args.video_url)
 
