@@ -17,9 +17,9 @@ from pytube import YouTube
 # spinner.py から Spinner クラスをインポート
 from spinner import Spinner
 
-MODEL = "gpt-3.5-turbo"
+MODEL = "gpt-3.5-turbo-16k"
 TMP_PATH = f"{os.getcwd()}/tmp"
-TOKEN_LIMIT = 2000
+TOKEN_LIMIT = 8000
 
 # 一時ファイル命名用のユニックスタイムスタンプ
 TIMESTAMP = str(int(time.time()))
