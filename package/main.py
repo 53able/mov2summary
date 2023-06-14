@@ -22,14 +22,16 @@ TMP_PATH = f"{os.getcwd()}/tmp"
 TOKEN_LIMIT = 8000
 
 # 要約のプロンプト
-PROMPT_SUMMARY = "Please summarize the following sentences in Japanese, separating them into paragraphs and line breaks. Adjust the text to be natural. Please sort out redundant wording."
+PROMPT_SUMMARY = "以下の文章を要約してください。段落分けをする場合は、改行を入れてください。"
+
+# 文章整形のプロンプト
+PROMPT_FORMAT = "以下の文章を整形してください。英語の場合は日本語に翻訳してください。"
 
 # タイトルのプロンプト
-PROMPT_TITLE = "Please create a heading for the following text in Japanese."
+PROMPT_TITLE = "以下の文章についてのタイトルを付けてください。"
 
 # 一時ファイル命名用のユニックスタイムスタンプ
 TIMESTAMP = str(int(time.time()))
-
 
 # 入力されたURLが有効なYouTubeのURLかどうかを確認
 def validate_youtube_url(url):
@@ -108,6 +110,23 @@ def summarize_text(text):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
+# 指定されたテキストを整形
+def format_text(text):
+    prompt = f"{PROMPT_FORMAT}:\n\n{text}"
+    try:
+        response = openai.ChatCompletion.create(
+            model=MODEL,
+            messages=[
+                {"role": "user", "content": prompt}
+            ]
+        )
+        result = response["choices"][0]["message"]["content"]
+        return result
+    except openai.error.APIError as e:
+        print(f"An API error occurred: {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
 # 指定されたテキストをタイトルに変換
 def title_text(text):
     prompt = f"{PROMPT_TITLE}:\n\n{text}"
@@ -152,6 +171,14 @@ def parallel_iterative_summary(text):
 
     return summary
 
+def parallel_iterative_format(text):
+    text_list = split_text(text)
+    formatted_text = ""
+    with ThreadPoolExecutor() as executor:
+        results = executor.map(summarize_text, text_list)
+        for result in results:
+            formatted_text += result
+    return formatted_text
 
 # ローカルのビデオファイルを選択
 def get_local_video_file():
@@ -193,7 +220,10 @@ def process_video(video_path):
             generated_text.append(f"## トランスクリプト {index}\n{result}")
             transcript_text_sum += result
 
-    summary = parallel_iterative_summary(transcript_text_sum)
+    formatted = parallel_iterative_format(transcript_text_sum)
+    generated_text.append(f"## 整形\n{formatted}")
+
+    summary = parallel_iterative_summary(formatted)
 
     title = title_text(summary)
 
