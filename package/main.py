@@ -17,21 +17,24 @@ from pytube import YouTube
 # spinner.py から Spinner クラスをインポート
 from spinner import Spinner
 
-MODEL = "gpt-3.5-turbo-16k"
 TMP_PATH = f"{os.getcwd()}/tmp"
-TOKEN_LIMIT = 8000
-
-# 要約のプロンプト
-PROMPT_SUMMARY = "以下の文章を要約してください。段落分けをする場合は、改行を入れてください。"
-
-# 文章整形のプロンプト
-PROMPT_FORMAT = "以下の文章を整形してください。英語の場合は日本語に翻訳してください。"
-
-# タイトルのプロンプト
-PROMPT_TITLE = "以下の文章についてのタイトルを付けてください。"
 
 # 一時ファイル命名用のユニックスタイムスタンプ
 TIMESTAMP = str(int(time.time()))
+
+# 環境変数ファイルの読み込み
+with open('.env') as f:
+    for line in f:
+        key, value = line.strip().split('=')
+        os.environ[key] = value
+
+# 環境変数の値にアクセス
+TOKEN_LIMIT = os.environ.get('TOKEN_LIMIT')
+PROMPT_SUMMARY = os.environ.get('PROMPT_SUMMARY')
+PROMPT_FORMAT= os.environ.get('PROMPT_FORMAT')
+PROMPT_TITLE= os.environ.get('PROMPT_TITLE')
+MODEL= os.environ.get('MODEL')
+API_KEY= os.environ.get('API_KEY')
 
 # 入力されたURLが有効なYouTubeのURLかどうかを確認
 def validate_youtube_url(url):
