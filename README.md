@@ -26,24 +26,33 @@ pip install -r requirements.txt
 
 ## 使い方
 
-まず、以下のようにしてスクリプトを実行します。
+`.env` ファイルを作成し、OpenAI の API キーを記述します。
+このファイルは、プロジェクトのルートディレクトリに保存してください。以下に例を示します。
 
-```bash
-python main.py YOUR_OPENAI_API_KEY YOUTUBE_VIDEO_URL
+```
+OPENAI_API_KEY=YOUR_OPENAI_API_KEY
 ```
 
-ここで、`YOUR_OPENAI_API_KEY`はあなたの OpenAI API キー、`YOUTUBE_VIDEO_URL`は要約したい YouTube のビデオの URL です。
+ここで、`YOUR_OPENAI_API_KEY`はあなたの OpenAI API キーのことです。
+
+次に、以下のようにしてスクリプトを実行します。
+
+```bash
+python main.py YOUTUBE_VIDEO_URL
+```
+
+`YOUTUBE_VIDEO_URL`は要約したい YouTube のビデオの URL です。
 
 オプションで、`--clean` フラグを指定することで、一時ファイルを削除することができます。一時ファイルは、ダウンロードしたビデオファイルや音声ファイルなどです。 `tmp` ディレクトリに保存されます。
 
 ```bash
-python main.py YOUR_OPENAI_API_KEY YOUTUBE_VIDEO_URL --clean
+python main.py YOUTUBE_VIDEO_URL --clean
 ```
 
 YOUTUBE_VIDEO_URL を指定せずにスクリプトを実行すると、 GUI が起動します。GUI では、ローカルのビデオファイルを読み込むことができます。
 
 ```bash
-python main.py YOUR_OPENAI_API_KEY
+python main.py
 ```
 
 ## 出力

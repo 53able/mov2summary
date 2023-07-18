@@ -8,5 +8,6 @@ setup(
         'ffmpeg-python==0.2.0',
         'openai==0.27.7',
         'pytube==15.0.0',
+        'python-dotenv==1.0.0',
     ],
 )

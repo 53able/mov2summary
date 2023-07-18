@@ -13,6 +13,9 @@ import time
 import ffmpeg
 import openai
 from pytube import YouTube
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # spinner.py から Spinner クラスをインポート
 from spinner import Spinner
@@ -242,7 +245,6 @@ def summarize_video_from_youtube(video_url):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Summarize a video.')
-    parser.add_argument('api_key', type=str, help='OpenAI API Key')
     parser.add_argument('video_url', type=str, nargs='?', default=None, help='Path to the video file')
     parser.add_argument('--clean', action='store_true', help='Clean up temporary files')
     args = parser.parse_args()
@@ -259,7 +261,7 @@ if __name__ == "__main__":
         os.mkdir(TMP_PATH)
 
     # api_keyを設定
-    openai.api_key = args.api_key
+    openai.api_key = os.getenv("OPENAI_API_KEY")
 
     if args.video_url is None:
         video_path = get_local_video_file()
