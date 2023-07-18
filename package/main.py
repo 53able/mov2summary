@@ -156,6 +156,15 @@ def parallel_summarize_text(text_list):
             summary_text += result
     return summary_text
 
+# テキストリストの各要素を並行して整形
+def parallel_format_text(text_list):
+    formatted_text = ""
+    with ThreadPoolExecutor() as executor:
+        results = executor.map(format_text, text_list)
+        for result in results:
+            formatted_text += result
+    return formatted_text
+
 generated_text = []
 
 # テキストを指定された文字数で分割しながら要約
@@ -176,11 +185,8 @@ def parallel_iterative_summary(text):
 
 def parallel_iterative_format(text):
     text_list = split_text(text)
-    formatted_text = ""
-    with ThreadPoolExecutor() as executor:
-        results = executor.map(summarize_text, text_list)
-        for result in results:
-            formatted_text += result
+    formatted_text = parallel_format_text(text_list)
+    generated_text.append(f"## 整形\n{formatted_text}")
     return formatted_text
 
 # ローカルのビデオファイルを選択
@@ -224,10 +230,7 @@ def process_video(video_path):
             transcript_text_sum += result
 
     formatted = parallel_iterative_format(transcript_text_sum)
-    generated_text.append(f"## 整形\n{formatted}")
-
     summary = parallel_iterative_summary(formatted)
-
     title = title_text(summary)
 
     return title
