@@ -19,6 +19,12 @@
 pip install -r requirements.txt
 ```
 
+動画から音声を分離するために、`ffmpeg` が必要です。`ffmpeg` は、以下のコマンドでインストールできます。
+
+```bash
+brew install ffmpeg
+```
+
 ## 使い方
 
 `.env` ファイルを作成し、OpenAI の API キーを記述します。
@@ -37,6 +43,12 @@ python main.py YOUTUBE_VIDEO_URL
 ```
 
 `YOUTUBE_VIDEO_URL`は要約したい YouTube のビデオの URL です。
+
+ダブルクォーテーションで囲む必要があります。例えば、以下のようになります。
+
+```bash
+python main.py "https://www.youtube.com/watch?v=YOUR_YOUTUBE_VIDEO_ID"
+```
 
 オプションで、`--clean` フラグを指定することで、一時ファイルを削除することができます。一時ファイルは、ダウンロードしたビデオファイルや音声ファイルなどです。 `tmp` ディレクトリに保存されます。
 
