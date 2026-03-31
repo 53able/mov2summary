@@ -13,37 +13,53 @@
 ## 必要なPythonライブラリ
 
 このプロジェクトを実行するためには、以下の外部 Python ライブラリが必要です。
-
-- pytube
-- ffmpeg-python
-- openai
-
 これらのライブラリは `pip` を使用してインストールできます。以下にインストールコマンドを示します。
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## 使い方
-
-まず、以下のようにしてスクリプトを実行します。
+動画から音声を分離するために、`ffmpeg` が必要です。`ffmpeg` は、以下のコマンドでインストールできます。
 
 ```bash
-python main.py YOUR_OPENAI_API_KEY YOUTUBE_VIDEO_URL
+brew install ffmpeg
 ```
 
-ここで、`YOUR_OPENAI_API_KEY`はあなたの OpenAI API キー、`YOUTUBE_VIDEO_URL`は要約したい YouTube のビデオの URL です。
+## 使い方
+
+`.env` ファイルを作成し、OpenAI の API キーを記述します。
+このファイルは、プロジェクトのルートディレクトリに保存してください。以下に例を示します。
+
+```
+OPENAI_API_KEY=YOUR_OPENAI_API_KEY
+```
+
+ここで、`YOUR_OPENAI_API_KEY`はあなたの OpenAI API キーのことです。
+
+次に、以下のようにしてスクリプトを実行します。
+
+```bash
+python main.py YOUTUBE_VIDEO_URL
+```
+
+`YOUTUBE_VIDEO_URL`は要約したい YouTube のビデオの URL です。
+
+ダブルクォーテーションで囲む必要があります。例えば、以下のようになります。
+
+```bash
+python main.py "https://www.youtube.com/watch?v=YOUR_YOUTUBE_VIDEO_ID"
+```
 
 オプションで、`--clean` フラグを指定することで、一時ファイルを削除することができます。一時ファイルは、ダウンロードしたビデオファイルや音声ファイルなどです。 `tmp` ディレクトリに保存されます。
 
 ```bash
-python main.py YOUR_OPENAI_API_KEY YOUTUBE_VIDEO_URL --clean
+python main.py YOUTUBE_VIDEO_URL --clean
 ```
 
 YOUTUBE_VIDEO_URL を指定せずにスクリプトを実行すると、 GUI が起動します。GUI では、ローカルのビデオファイルを読み込むことができます。
 
 ```bash
-python main.py YOUR_OPENAI_API_KEY
+python main.py
 ```
 
 ## 出力
